@@ -84,8 +84,8 @@ class NoisyGate(BaseGate):
             torch.tensor([0.0], device=clean_values.device),
             torch.tensor([1.0], device=clean_values.device),
         )
-        prob_if_in = normal.cdf((clean_values - threshold_if_in) / noise_stddev)
-        prob_if_out = normal.cdf((clean_values - threshold_if_out) / noise_stddev)
+        prob_if_in = normal.cdf((clean_values - threshold_if_in) / (noise_stddev if noise_stddev is not None else 1e-16))
+        prob_if_out = normal.cdf((clean_values - threshold_if_out) / (noise_stddev if noise_stddev is not None else 1e-16))
         prob = torch.where(is_in, prob_if_in, prob_if_out)
         return prob
 
@@ -128,7 +128,7 @@ class NoisyGate(BaseGate):
         if self.top_k < self.tot_expert:
             load = (
                 self._prob_in_top_k(
-                    clean_logits, noisy_logits, noise_stddev, top_logits
+                    clean_logits, noisy_logits, noise_stddev if self.training else None, top_logits
                 )
             ).sum(0)
         else:
@@ -139,6 +139,6 @@ class NoisyGate(BaseGate):
         self.set_loss(loss)
 
         return (
-            top_k_indices.contiguous().view(-1),
-            top_k_gates.contiguous().unsqueeze(1),
+            top_k_indices,
+            top_k_gates,
         )
