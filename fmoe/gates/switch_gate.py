@@ -25,7 +25,7 @@ class SwitchGate(NaiveGate):
         r"""
         The switch firstly conduct softmax and then calculates the top-1
         """
-        score = self.gate(inp)
+        score = self.gate(inp.type(torch.float32))
 
         if self.training:
             # random uniform number from [1-eps, 1+eps]
@@ -34,7 +34,7 @@ class SwitchGate(NaiveGate):
             score += noise
 
         # fp32 softmax for numerical stability
-        score = F.softmax(score.float(), dim=-1)
+        score = F.softmax(score, dim=-1)
 
         top1_score, top1_idx = torch.topk(
             score, k=1, dim=-1, largest=True
